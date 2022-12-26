@@ -1,10 +1,90 @@
 <script setup>
-import { ref, computed } from "vue";
+import {
+  ref, computed, watch, onBeforeUnmount
+} from "vue";
 import data from "./data";
 
-const stage = ref(2);
+let startTimer;
+let timer;
+const START_TIME = 5000;
+const TIME = 20000;
+
+const isStart = ref(false);
+const isStarted = ref(false);
+const startCountdownTime = ref(START_TIME);
+const countdownTime = ref(TIME);
+const isFailure = ref(false);
+const isEnded = ref(false);
+const stage = ref(0);
+const stageAnswers = ref(new Set());
 
 const stageData = computed(() => data[stage.value]);
+
+const endGame = (failure = false) => {
+  window.clearInterval(startTimer);
+  window.clearTimeout(timer);
+  isStarted.value = false;
+  isFailure.value = failure;
+  isEnded.value = true;
+};
+
+watch([() => isStarted.value, () => stage.value], ([isStarted, stage]) => {
+  if (isStarted) {
+    window.clearTimeout(timer);
+    countdownTime.value = TIME;
+    stageAnswers.value = new Set();
+
+    const startStage = () => {
+      timer = window.setTimeout(() => {
+        if (countdownTime.value > 0) {
+          countdownTime.value -= 1000;
+          startStage();
+          return;
+        }
+        endGame(true);
+        startStage();
+      }, 1000);
+    };
+
+    startStage();
+  }
+});
+
+const startGame = () => {
+  isStart.value = true;
+  isStarted.value = false;
+  startCountdownTime.value = START_TIME;
+  isFailure.value = false;
+  isEnded.value = false;
+  stage.value = 0;
+
+  window.clearInterval(startTimer);
+  startTimer = window.setInterval(() => {
+    startCountdownTime.value -= 1000;
+    if (startCountdownTime.value < 1000) {
+      isStarted.value = true;
+      window.clearInterval(startTimer);
+    }
+  }, 1000);
+};
+
+const submitHandler = () => {
+  for (const answer of stageData.value.answers) {
+    if (!stageAnswers.value.has(answer)) {
+      endGame(true);
+      return;
+    }
+  }
+  if (stage.value < data.length - 1) {
+    stage.value += 1;
+    return;
+  }
+  endGame();
+};
+
+onBeforeUnmount(() => {
+  endGame();
+});
 
 </script>
 
@@ -24,6 +104,7 @@ const stageData = computed(() => data[stage.value]);
             src="@/assets/puzzle/time.png"
             alt="time"
           >
+          <Number :number="(countdownTime / 1000).toString()" />
         </div>
         <div
           class="puzzle__gaming-main"
@@ -39,19 +120,25 @@ const stageData = computed(() => data[stage.value]);
               v-for="question in stageData.questions"
               :key="question.id"
               class="puzzle__gaming-question-item"
+              @click="stageAnswers.has(question.id)
+                ? stageAnswers.delete(question.id)
+                : stageAnswers.add(question.id)"
             >
               <img
                 :src="question.url"
                 alt="question"
               >
               <img
-                class="-active"
+                :class="{
+                  '-active': stageAnswers.has(question.id)
+                }"
                 :src="question.activeUrl"
                 alt="question"
               >
             </div>
             <div
               class="puzzle__button"
+              @click="submitHandler"
             >
               <img
                 src="@/assets/puzzle/button-submit.png"
@@ -61,7 +148,8 @@ const stageData = computed(() => data[stage.value]);
           </div>
         </div>
       </div>
-      <!-- <div
+      <div
+        v-show="!isStart"
         class="puzzle__intro"
       >
         <img
@@ -70,35 +158,55 @@ const stageData = computed(() => data[stage.value]);
         >
         <div
           class="puzzle__button"
+          @click="startGame"
         >
           <img
             src="@/assets/puzzle/button-start.png"
             alt="button"
           >
         </div>
-      </div> -->
-      <!-- <div class="puzzle__failure">
+      </div>
+      <div
+        v-show="!isStarted && isStart"
+        class="puzzle__countdown"
+      >
+        <Number
+          type="num-3"
+          :number="(startCountdownTime / 1000).toString()"
+        />
+      </div>
+      <div
+        v-show="isEnded && isFailure"
+        class="puzzle__failure"
+      >
         <img
           src="@/assets/puzzle/failure-bg.png"
           alt="bg"
         >
         <div
           class="puzzle__button"
+          @click="startGame"
         >
           <img
             src="@/assets/puzzle/button-restart.png"
             alt="button"
           >
         </div>
-      </div> -->
-      <!-- <div
+      </div>
+      <div
+        v-show="isEnded && !isFailure"
         class="puzzle__success"
       >
         <img
           src="@/assets/puzzle/success-bg.png"
           alt="bg"
         >
-        <div class="puzzle__success-main">
+        <div
+          class="puzzle__success-main"
+          :class="{
+            '-active': isEnded && !isFailure
+          }"
+        >
           <img
             src="@/assets/puzzle/line-bg.png"
             alt="bg"
@@ -112,7 +220,7 @@ const stageData = computed(() => data[stage.value]);
             >
           </div>
         </div>
-      </div> -->
+      </div>
     </div>
   </div>
 </template>
@@ -124,7 +232,7 @@ const stageData = computed(() => data[stage.value]);
   position: relative;
   overflow: hidden;
   width: 100%;
-  max-width: 1080px;
+  max-width: 480px;
 
   > * {
     @include size(100%);
@@ -142,6 +250,22 @@ const stageData = computed(() => data[stage.value]);
 
     img {
       width: 100%;
+    }
+  }
+
+  &__countdown {
+    @include size(100%);
+
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 70%);
+
+    .numbers {
+      width: 50%;
     }
   }
 
@@ -174,6 +298,14 @@ const stageData = computed(() => data[stage.value]);
       left: 50%;
       transform: translate(-50%, 0);
       width: 40%;
+
+      .numbers {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(0%, -40%);
+        width: 15%;
+      }
     }
 
     &-answer {
@@ -238,11 +370,18 @@ const stageData = computed(() => data[stage.value]);
         justify-content: center;
         cursor: pointer;
 
-        .-active {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
+        img {
+          &:nth-of-type(2) {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+
+            &.-active {
+              display: block;
+            }
+          }
         }
       }
     }
@@ -275,6 +414,25 @@ const stageData = computed(() => data[stage.value]);
       top: 0;
       left: 0;
       width: 100%;
+      opacity: 0;
+
+      @keyframes display {
+        0% {
+          opacity: 0;
+        }
+
+        99% {
+          opacity: 0;
+        }
+
+        100% {
+          opacity: 1;
+        }
+      }
+
+      &.-active {
+        animation: display 3s forwards;
+      }
 
       .puzzle__button {
         bottom: 7%;

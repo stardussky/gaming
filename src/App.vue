@@ -17,8 +17,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <!-- <WhackAMole /> -->
-  <Puzzle />
+  <router-view />
 </template>
 
 <style lang="scss">

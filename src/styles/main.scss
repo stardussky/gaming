@@ -38,9 +38,11 @@ html, body {
 #app {
   display: flex;
   align-items: center;
+  justify-content: center;
   width: 100%;
-  min-height: 100vh;
+  min-height: 100svh;
   background-color: black;
+  touch-action: none;
 }
 
 img {

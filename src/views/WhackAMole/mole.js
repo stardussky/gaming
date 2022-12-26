@@ -15,12 +15,12 @@ export default class Mole {
     }),
     SR: Object.freeze({
       type: Mole.RATE_TYPE.SR,
-      score: 1,
+      score: 10,
       life: range(1000, 2000),
     }),
     SSR: Object.freeze({
       type: Mole.RATE_TYPE.SSR,
-      score: 3,
+      score: 10,
       life: range(500, 1000),
     }),
   });

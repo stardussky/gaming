@@ -2,6 +2,7 @@ export default [
   {
     id: 1,
     answerUrl: new URL("../../assets/puzzle/stage-1/answer.png", import.meta.url).href,
+    answers: [1, 3],
     questions: [
       {
         id: 1,
@@ -23,14 +24,15 @@ export default [
   {
     id: 2,
     answerUrl: new URL("../../assets/puzzle/stage-2/answer.png", import.meta.url).href,
+    answers: [1, 2, 3],
     questions: [
       {
-        id: 1,
+        id: 2,
         url: new URL("../../assets/puzzle/stage-2/2.png", import.meta.url).href,
         activeUrl: new URL("../../assets/puzzle/stage-2/2-active.png", import.meta.url).href,
       },
       {
-        id: 2,
+        id: 4,
         url: new URL("../../assets/puzzle/stage-2/4.png", import.meta.url).href,
         activeUrl: new URL("../../assets/puzzle/stage-2/4-active.png", import.meta.url).href,
       },
@@ -40,7 +42,7 @@ export default [
         activeUrl: new URL("../../assets/puzzle/stage-2/3-active.png", import.meta.url).href,
       },
       {
-        id: 4,
+        id: 1,
         url: new URL("../../assets/puzzle/stage-2/1.png", import.meta.url).href,
         activeUrl: new URL("../../assets/puzzle/stage-2/1-active.png", import.meta.url).href,
       },
@@ -49,6 +51,7 @@ export default [
   {
     id: 3,
     answerUrl: new URL("../../assets/puzzle/stage-3/answer.png", import.meta.url).href,
+    answers: [1, 2, 3, 4, 6],
     questions: [
       {
         id: 1,

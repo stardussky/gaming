@@ -1,12 +1,14 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { ref, watch, onBeforeUnmount } from "vue";
 import { range } from "./utils";
 import Mole from "./mole";
 
+const START_TIME = 5000;
 const TIME = 30000;
 const HOLE_NUM = 8;
 const PER_MOUNT = 1;
 
+let startTimer;
 let moleTimer;
 let timeTimer;
 
@@ -16,7 +18,9 @@ const moles = ref(Array.from({ length: HOLE_NUM }, (v, i) => ({
 })));
 const countdownTime = ref(TIME);
 const scores = ref(0);
+const isStart = ref(false);
 const isStarted = ref(false);
+const startCountdownTime = ref(START_TIME);
 const isFailure = ref(false);
 const isEnded = ref(false);
 
@@ -32,67 +36,86 @@ const rabbits = ref([]);
 const endGame = (failure = false) => {
   window.clearTimeout(moleTimer);
   window.clearTimeout(timeTimer);
-  console.log("end");
   isStarted.value = false;
   isEnded.value = true;
   isFailure.value = failure;
   if (isFailure.value) {
     boom.value.start();
   }
+  console.log("end");
 };
 
-const startGame = () => {
-  const countingMole = () => {
-    moleTimer = window.setTimeout(() => {
-      for (let i = 0; i < PER_MOUNT; i += 1) {
-        const id = Math.floor(Math.random() * HOLE_NUM);
+watch(() => isStarted.value, (isStarted) => {
+  if (isStarted) {
+    window.clearTimeout(moleTimer);
+    window.clearTimeout(timeTimer);
 
-        if (moles.value[id].active) continue;
+    const countingMole = () => {
+      moleTimer = window.setTimeout(() => {
+        for (let i = 0; i < PER_MOUNT; i += 1) {
+          const id = Math.floor(Math.random() * HOLE_NUM);
 
-        const mole = Mole.getMole();
-        mole.options.onActiveChanged = (mole) => {
-          moles.value[id].active = false;
+          if (moles.value[id].active) continue;
 
-          if (mole.isHit) {
-            if (mole.options.type === Mole.RATE_TYPE.R) {
-              endGame(true);
-              return;
+          const mole = Mole.getMole();
+          mole.options.onActiveChanged = (mole) => {
+            moles.value[id].active = false;
+
+            if (mole.isHit) {
+              if (mole.options.type === Mole.RATE_TYPE.R) {
+                endGame(true);
+                return;
+              }
+              scores.value += mole.options.score;
             }
-            scores.value += mole.options.score;
-          }
-        };
-        moles.value[id].mole = mole;
-        moles.value[id].active = true;
-      }
+          };
+          moles.value[id].mole = mole;
+          moles.value[id].active = true;
+        }
 
-      countingMole();
-    }, range(1000, 2000));
-  };
+        countingMole();
+      }, range(1000, 2000));
+    };
 
-  const countingTime = () => {
-    timeTimer = window.setTimeout(() => {
-      countdownTime.value -= 1000;
+    const countingTime = () => {
+      timeTimer = window.setTimeout(() => {
+        countdownTime.value -= 1000;
 
-      if (countdownTime.value > 0) {
-        countingTime();
-        return;
-      }
+        if (countdownTime.value > 0) {
+          countingTime();
+          return;
+        }
 
-      endGame();
-    }, 1000);
-  };
+        endGame();
+      }, 1000);
+    };
 
-  countingMole();
-  countingTime();
-  isStarted.value = true;
+    countingMole();
+    countingTime();
+  }
+});
+
+const startGame = () => {
+  isStart.value = true;
+  isStarted.value = false;
   isEnded.value = false;
   isFailure.value = false;
+  startCountdownTime.value = START_TIME;
   countdownTime.value = TIME;
   scores.value = 0;
   moles.value = Array.from({ length: HOLE_NUM }, (v, i) => ({
     id: i + 1,
     active: false,
   }));
+
+  window.clearInterval(startTimer);
+  startTimer = window.setInterval(() => {
+    startCountdownTime.value -= 1000;
+    if (startCountdownTime.value < 1000) {
+      isStarted.value = true;
+      window.clearInterval(startTimer);
+    }
+  }, 1000);
 };
 
 const whackMole = (payload, i) => {
@@ -146,7 +169,8 @@ onBeforeUnmount(() => {
             <div
               class="whack-a-mole__gaming-hole-main"
               :class="{
-                '-active': mole.active
+                '-active': mole.active,
+                '-hit': mole.mole?.isHit
               }"
             >
               <img
@@ -174,12 +198,20 @@ onBeforeUnmount(() => {
                   :images="rabbitImages"
                 />
               </div>
+              <div
+                v-show="mole?.mole?.options?.type !== Mole.RATE_TYPE.R"
+                class="whack-a-mole__gaming-point"
+              >
+                <img
+                  src="@/assets/whackAMole/+10.png"
+                >
+              </div>
             </div>
           </div>
         </div>
       </div>
       <div
-        v-show="!isStarted && !isEnded"
+        v-show="!isStart"
         class="whack-a-mole__intro"
       >
         <img
@@ -195,6 +227,15 @@ onBeforeUnmount(() => {
             alt="button"
           >
         </div>
+      </div>
+      <div
+        v-show="!isStarted && isStart"
+        class="whack-a-mole__countdown"
+      >
+        <Number
+          type="num-3"
+          :number="(startCountdownTime / 1000).toString()"
+        />
       </div>
       <div
         v-show="isEnded && isFailure"
@@ -226,7 +267,12 @@ onBeforeUnmount(() => {
           src="@/assets/whackAMole/success-bg.png"
           alt="bg"
         >
-        <div class="whack-a-mole__success-main">
+        <div
+          class="whack-a-mole__success-main"
+          :class="{
+            '-active': isEnded && !isFailure
+          }"
+        >
           <img
             src="@/assets/whackAMole/line-bg.png"
             alt="bg"
@@ -256,7 +302,7 @@ onBeforeUnmount(() => {
   position: relative;
   overflow: hidden;
   width: 100%;
-  max-width: 1080px;
+  max-width: 480px;
 
   > * {
     @include size(100%);
@@ -287,6 +333,22 @@ onBeforeUnmount(() => {
 
     img {
       width: 100%;
+    }
+  }
+
+  &__countdown {
+    @include size(100%);
+
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 70%);
+
+    .numbers {
+      width: 50%;
     }
   }
 
@@ -391,12 +453,26 @@ onBeforeUnmount(() => {
 
         &.-active {
           opacity: 1;
-          transition: none;
+        }
 
-          &:active {
-            .whack-a-mole__gaming-rabbit {
-              opacity: 1;
-              transition: none;
+        &.-hit {
+          .whack-a-mole__gaming-rabbit {
+            opacity: 1;
+          }
+
+          .whack-a-mole__gaming-point {
+            animation: fade-up 1s forwards;
+
+            @keyframes fade-up {
+              0% {
+                opacity: 0;
+                transform: translate(-50%, -150%);
+              }
+
+              100% {
+                opacity: 1;
+                transform: translate(-50%, -200%);
+              }
             }
           }
         }
@@ -420,13 +496,21 @@ onBeforeUnmount(() => {
       width: 100%;
       transform: translate(30%, -50%);
       opacity: 0;
-      transition: opacity 0s 0.5s;
 
       > * {
         position: absolute;
         top: 0;
         left: 0;
       }
+    }
+
+    &-point {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 50%;
+      transform: translate(-50%, -150%);
+      opacity: 0;
     }
   }
 
@@ -473,6 +557,25 @@ onBeforeUnmount(() => {
       top: 0;
       left: 0;
       width: 100%;
+      opacity: 0;
+
+      @keyframes display {
+        0% {
+          opacity: 0;
+        }
+
+        99% {
+          opacity: 0;
+        }
+
+        100% {
+          opacity: 1;
+        }
+      }
+
+      &.-active {
+        animation: display 3s forwards;
+      }
 
       .numbers {
         position: absolute;
