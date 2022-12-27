@@ -1,7 +1,9 @@
 <script setup>
 import {
-  ref, computed, watch, onBeforeUnmount
+  ref, computed, watch, onMounted, onBeforeUnmount
 } from "vue";
+import liff from "@line/liff";
+import axios from "@/libs/axios";
 import data from "./data";
 
 let startTimer;
@@ -9,6 +11,7 @@ let timer;
 const START_TIME = 5000;
 const TIME = 20000;
 
+const userProfile = ref(null);
 const isStart = ref(false);
 const isStarted = ref(false);
 const startCountdownTime = ref(START_TIME);
@@ -51,6 +54,8 @@ watch([() => isStarted.value, () => stage.value], ([isStarted, stage]) => {
 });
 
 const startGame = () => {
+  if (!userProfile.value) return;
+
   isStart.value = true;
   isStarted.value = false;
   startCountdownTime.value = START_TIME;
@@ -81,6 +86,48 @@ const submitHandler = () => {
   }
   endGame();
 };
+
+const submitLineHandler = async () => {
+  try {
+    const { data: result } = await axios({
+      method: "post",
+      url: "api/complete",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: {
+        userId: userProfile.value.userId,
+        gameId: 1,
+      },
+    });
+    alert(result);
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+onMounted(async () => {
+  try {
+    await liff.init({
+      liffId: "1656724231-XRYzO2rR",
+    });
+    console.log("LIFF init succeeded.");
+
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
+    const profile = await liff.getProfile();
+    const { data: isRegisteredData } = await axios.get(`api/isRegistered?userId=${profile.userId}`);
+    if (!isRegisteredData.isRegistered) {
+      alert("請先報到");
+      // return;
+    }
+    userProfile.value = profile;
+  } catch (e) {
+    console.log(`LIFF init failed. ${e}`);
+  }
+});
 
 onBeforeUnmount(() => {
   endGame();
@@ -213,6 +260,7 @@ onBeforeUnmount(() => {
           >
           <div
             class="puzzle__button"
+            @click="submitLineHandler"
           >
             <img
               src="@/assets/puzzle/button-ok.png"

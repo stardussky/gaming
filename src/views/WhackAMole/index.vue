@@ -1,5 +1,9 @@
 <script setup>
-import { ref, watch, onBeforeUnmount } from "vue";
+import {
+  ref, watch, onMounted, onBeforeUnmount
+} from "vue";
+import liff from "@line/liff";
+import axios from "@/libs/axios";
 import { range } from "./utils";
 import Mole from "./mole";
 
@@ -12,6 +16,7 @@ let startTimer;
 let moleTimer;
 let timeTimer;
 
+const userProfile = ref(null);
 const moles = ref(Array.from({ length: HOLE_NUM }, (v, i) => ({
   id: i + 1,
   active: false,
@@ -96,6 +101,8 @@ watch(() => isStarted.value, (isStarted) => {
 });
 
 const startGame = () => {
+  if (!userProfile.value) return;
+
   isStart.value = true;
   isStarted.value = false;
   isEnded.value = false;
@@ -124,6 +131,48 @@ const whackMole = (payload, i) => {
     rabbits.value[i].start();
   }
 };
+
+const submitLineHandler = async () => {
+  try {
+    const { data: result } = await axios({
+      method: "post",
+      url: "api/complete",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: {
+        userId: userProfile.value.userId,
+        gameId: 1,
+      },
+    });
+    alert(result);
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+onMounted(async () => {
+  try {
+    await liff.init({
+      liffId: "1656724231-1mYWq6pz",
+    });
+    console.log("LIFF init succeeded.");
+
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
+    const profile = await liff.getProfile();
+    const { data: isRegisteredData } = await axios.get(`api/isRegistered?userId=${profile.userId}`);
+    if (!isRegisteredData.isRegistered) {
+      alert("請先報到");
+      // return;
+    }
+    userProfile.value = profile;
+  } catch (e) {
+    console.log(`LIFF init failed. ${e}`);
+  }
+});
 
 onBeforeUnmount(() => {
   endGame();
@@ -283,6 +332,7 @@ onBeforeUnmount(() => {
           />
           <div
             class="whack-a-mole__button"
+            @click="submitLineHandler"
           >
             <img
               src="@/assets/whackAMole/button-ok.png"

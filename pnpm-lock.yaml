@@ -4,6 +4,7 @@ specifiers:
   '@line/liff': ^2.21.4
   '@vitejs/plugin-vue': ^4.0.0
   '@vueuse/core': ^9.8.0
+  axios: ^1.2.1
   body-scroll-lock: 4.0.0-beta.0
   eslint: ^8.30.0
   eslint-config-airbnb-base: ^15.0.0
@@ -29,6 +30,7 @@ specifiers:
 dependencies:
   '@line/liff': 2.21.4
   '@vueuse/core': 9.8.0_vue@3.2.45
+  axios: 1.2.1
   body-scroll-lock: 4.0.0-beta.0
   mitt: 3.0.0
   normalize.css: 8.0.1
@@ -1451,6 +1453,16 @@ packages:
     dependencies:
       follow-redirects: 1.15.2
       form-data: 4.0.0
+    transitivePeerDependencies:
+      - debug
+    dev: false
+
+  /axios/1.2.1:
+    resolution: {integrity: sha512-I88cFiGu9ryt/tfVEi4kX2SITsvDddTajXTOFmt2uK1ZVA8LytjtdeyefdQWEf5PU8w+4SSJDoYnggflB5tW4A==}
+    dependencies:
+      follow-redirects: 1.15.2
+      form-data: 4.0.0
+      proxy-from-env: 1.1.0
     transitivePeerDependencies:
       - debug
     dev: false
@@ -4128,6 +4140,10 @@ packages:
 
   /promise-polyfill/8.2.3:
     resolution: {integrity: sha512-Og0+jCRQetV84U8wVjMNccfGCnMQ9mGs9Hv78QFe+pSDD3gWTpz0y+1QCuxy5d/vBFuZ3iwP2eycAkvqIMPmWg==}
+    dev: false
+
+  /proxy-from-env/1.1.0:
+    resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
     dev: false
 
   /punycode/2.1.1:
