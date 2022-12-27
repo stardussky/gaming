@@ -100,7 +100,7 @@ const submitLineHandler = async () => {
         gameId: 1,
       },
     });
-    alert(result);
+    alert(JSON.stringify(result));
   } catch (e) {
     console.log(e);
   }

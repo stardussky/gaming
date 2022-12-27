@@ -142,10 +142,11 @@ const submitLineHandler = async () => {
       },
       data: {
         userId: userProfile.value.userId,
-        gameId: 1,
+        gameId: 2,
+        score: scores.value,
       },
     });
-    alert(result);
+    alert(JSON.stringify(result));
   } catch (e) {
     console.log(e);
   }
