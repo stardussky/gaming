@@ -31,27 +31,31 @@ const endGame = (failure = false) => {
   isEnded.value = true;
 };
 
-watch([() => isStarted.value, () => stage.value], ([isStarted, stage]) => {
-  if (isStarted) {
-    window.clearTimeout(timer);
-    countdownTime.value = TIME;
-    stageAnswers.value = new Set();
+watch(
+  [() => isStarted.value, () => stage.value],
+  ([isStarted, stage], [prevIsStart, prevStage]) => {
+    if (isStarted) {
+      window.clearTimeout(timer);
+      if (stage !== prevStage) {
+        countdownTime.value = TIME;
+        stageAnswers.value = new Set();
+      }
 
-    const startStage = () => {
-      timer = window.setTimeout(() => {
-        if (countdownTime.value > 0) {
-          countdownTime.value -= 1000;
-          startStage();
-          return;
-        }
-        endGame(true);
-        startStage();
-      }, 1000);
-    };
+      const startStage = () => {
+        timer = window.setTimeout(() => {
+          if (countdownTime.value > 0) {
+            countdownTime.value -= 1000;
+            startStage();
+            return;
+          }
+          endGame(true);
+        }, 1000);
+      };
 
-    startStage();
+      startStage();
+    }
   }
-});
+);
 
 const startGame = () => {
   if (!userProfile.value) return;
@@ -61,19 +65,28 @@ const startGame = () => {
   startCountdownTime.value = START_TIME;
   isFailure.value = false;
   isEnded.value = false;
-  stage.value = 0;
-
-  window.clearInterval(startTimer);
-  startTimer = window.setInterval(() => {
-    startCountdownTime.value -= 1000;
-    if (startCountdownTime.value < 1000) {
-      isStarted.value = true;
-      window.clearInterval(startTimer);
-    }
-  }, 1000);
+  stageAnswers.value = new Set();
+  if (countdownTime.value === 0) {
+    countdownTime.value = TIME;
+    stage.value = 0;
+    window.clearInterval(startTimer);
+    startTimer = window.setInterval(() => {
+      startCountdownTime.value -= 1000;
+      if (startCountdownTime.value < 1000) {
+        isStarted.value = true;
+        window.clearInterval(startTimer);
+      }
+    }, 600);
+  } else {
+    isStarted.value = true;
+  }
 };
 
 const submitHandler = () => {
+  if (stageData.value.answers.length !== stageAnswers.value.size) {
+    endGame(true);
+    return;
+  }
   for (const answer of stageData.value.answers) {
     if (!stageAnswers.value.has(answer)) {
       endGame(true);
@@ -214,7 +227,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
       <div
-        v-show="!isStarted && isStart"
+        v-show="!isEnded && !isStarted && isStart"
         class="puzzle__countdown"
       >
         <Number

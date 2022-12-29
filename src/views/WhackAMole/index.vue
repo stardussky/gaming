@@ -11,6 +11,7 @@ const START_TIME = 5000;
 const TIME = 30000;
 const HOLE_NUM = 8;
 const PER_MOUNT = 1;
+const MAX_PER_MOUNT = 3;
 
 let startTimer;
 let moleTimer;
@@ -47,7 +48,6 @@ const endGame = (failure = false) => {
   if (isFailure.value) {
     boom.value.start();
   }
-  console.log("end");
 };
 
 watch(() => isStarted.value, (isStarted) => {
@@ -57,7 +57,7 @@ watch(() => isStarted.value, (isStarted) => {
 
     const countingMole = () => {
       moleTimer = window.setTimeout(() => {
-        for (let i = 0; i < PER_MOUNT; i += 1) {
+        for (let i = 0; i < range(PER_MOUNT, MAX_PER_MOUNT); i += 1) {
           const id = Math.floor(Math.random() * HOLE_NUM);
 
           if (moles.value[id].active) continue;
@@ -65,6 +65,7 @@ watch(() => isStarted.value, (isStarted) => {
           const mole = Mole.getMole();
           mole.options.onActiveChanged = (mole) => {
             moles.value[id].active = false;
+            moles.value[id].mole = null;
 
             if (mole.isHit) {
               if (mole.options.type === Mole.RATE_TYPE.R) {
@@ -122,7 +123,7 @@ const startGame = () => {
       isStarted.value = true;
       window.clearInterval(startTimer);
     }
-  }, 1000);
+  }, 600);
 };
 
 const whackMole = (payload, i) => {
@@ -206,6 +207,15 @@ onBeforeUnmount(() => {
           </div>
         </div>
         <div class="whack-a-mole__gaming-holes">
+          <div class="whack-a-mole__gaming-rabbit -bg">
+            <Animate
+              v-show="moles.every((mole) => !mole?.mole?.isHit)"
+              ref="rabbits"
+              :images="rabbitImages"
+              repeat
+              auto-play
+            />
+          </div>
           <div
             v-for="(mole, i) in moles"
             :key="mole.id"
@@ -279,7 +289,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
       <div
-        v-show="!isStarted && isStart"
+        v-show="!isEnded && !isStarted && isStart"
         class="whack-a-mole__countdown"
       >
         <Number
@@ -295,18 +305,20 @@ onBeforeUnmount(() => {
           ref="boom"
           :images="boomImages"
         />
-        <img
-          src="@/assets/whackAMole/failure-bg.png"
-          alt="bg"
-        >
-        <div
-          class="whack-a-mole__button"
-          @click="startGame"
-        >
+        <div class="whack-a-mole__failure-delay">
           <img
-            src="@/assets/whackAMole/button-restart.png"
-            alt="button"
+            src="@/assets/whackAMole/failure-bg.png"
+            alt="bg"
           >
+          <div
+            class="whack-a-mole__button"
+            @click="startGame"
+          >
+            <img
+              src="@/assets/whackAMole/button-restart.png"
+              alt="button"
+            >
+          </div>
         </div>
       </div>
       <div
@@ -430,9 +442,9 @@ onBeforeUnmount(() => {
       .numbers {
         position: absolute;
         top: 50%;
-        left: 50%;
+        left: 60%;
         transform: translate(0, -40%);
-        width: 10%;
+        width: 15%;
       }
     }
 
@@ -442,9 +454,9 @@ onBeforeUnmount(() => {
       .numbers {
         position: absolute;
         top: 50%;
-        left: 40%;
+        left: 50%;
         transform: translate(0, -40%);
-        width: 10%;
+        width: 15%;
       }
     }
 
@@ -548,6 +560,14 @@ onBeforeUnmount(() => {
       transform: translate(30%, -50%);
       opacity: 0;
 
+      &.-bg {
+        right: auto;
+        left: 0;
+        width: 30%;
+        opacity: 1;
+        transform: translate(60%, -80%) scaleX(-1);
+      }
+
       > * {
         position: absolute;
         top: 0;
@@ -566,12 +586,13 @@ onBeforeUnmount(() => {
   }
 
   &__failure {
+    @include size(100%);
+
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
 
-    > img {
+    img {
       position: relative;
       width: 100%;
     }
@@ -588,6 +609,31 @@ onBeforeUnmount(() => {
         position: absolute;
         top: 0;
         left: 0;
+      }
+    }
+
+    &-delay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      opacity: 0;
+      pointer-events: none;
+      animation: delay 2s forwards;
+
+      @keyframes delay {
+        0% {
+          opacity: 0;
+        }
+
+        99% {
+          opacity: 0;
+        }
+
+        100% {
+          opacity: 1;
+          pointer-events: auto;
+        }
       }
     }
   }
