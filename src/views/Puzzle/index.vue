@@ -6,6 +6,9 @@ import liff from "@line/liff";
 import axios from "@/libs/axios";
 import data from "./data";
 
+const failureBg = new URL("../../assets/puzzle/failure-bg.png", import.meta.url).href;
+const errorBg = new URL("../../assets/puzzle/error-bg.png", import.meta.url).href;
+
 let startTimer;
 let timer;
 const START_TIME = 5000;
@@ -240,7 +243,9 @@ onBeforeUnmount(() => {
         class="puzzle__failure"
       >
         <img
-          src="@/assets/puzzle/failure-bg.png"
+          :src="countdownTime === 0
+            ? failureBg
+            : errorBg"
           alt="bg"
         >
         <div
