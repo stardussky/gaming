@@ -116,7 +116,7 @@ const submitLineHandler = async () => {
         gameId: 1,
       },
     });
-    alert(JSON.stringify(result));
+    window.location.replace("https://liff.line.me/1656724231-RoLkdxzg");
   } catch (e) {
     console.log(e);
   }
@@ -136,8 +136,9 @@ onMounted(async () => {
     const profile = await liff.getProfile();
     const { data: isRegisteredData } = await axios.get(`api/isRegistered?userId=${profile.userId}`);
     if (!isRegisteredData.isRegistered) {
-      alert("請先報到");
-      // return;
+      console.log("尚未報到");
+      window.location.replace("https://liff.line.me/1656724231-24JNLoOE");
+      return;
     }
     userProfile.value = profile;
   } catch (e) {

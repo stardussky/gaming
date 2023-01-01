@@ -6,11 +6,17 @@ const routes = [
   {
     path: "/puzzle",
     name: "Puzzle",
+    meta: {
+      title: "SHL MEDICAL 轉轉拼圖",
+    },
     component: Puzzle,
   },
   {
     path: "/whack-a-mole",
     name: "WhackAMole",
+    meta: {
+      title: "SHL MEDICAL 玉兔尋寶",
+    },
     component: WhackAMole,
   },
   {
@@ -22,6 +28,11 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+});
+
+router.beforeEach((to, from, next) => {
+  document.title = to.meta.title;
+  next();
 });
 
 export default router;
